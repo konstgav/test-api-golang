@@ -7,3 +7,8 @@ type Product struct {
 	Type  string `json:"type" bson:"type,omitempty"`
 	Price int    `json:"price" bson:"price,omitempty"`
 }
+
+type CrudEntity struct {
+	EntityInterface
+	*Product
+}
