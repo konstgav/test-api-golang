@@ -1,4 +1,4 @@
-package main
+package controller
 
 import (
 	"encoding/json"
@@ -6,27 +6,20 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"test-api-golang/interfaces"
+	"test-api-golang/model"
 
 	"github.com/gorilla/mux"
 )
 
-type CrudControllerInterface interface {
-	Create(w http.ResponseWriter, r *http.Request)
-	Get(w http.ResponseWriter, r *http.Request)
-	List(w http.ResponseWriter, r *http.Request)
-	Update(w http.ResponseWriter, r *http.Request)
-	Delete(w http.ResponseWriter, r *http.Request)
-}
-
 type CrudController struct {
-	CrudControllerInterface
-	service CrudServiceInterface
+	interfaces.CrudControllerInterface
+	service interfaces.CrudServiceInterface
 }
 
-func NewCrudController() *CrudController {
+func NewCrudController(service interfaces.CrudServiceInterface) *CrudController {
 	return &CrudController{
-		CrudControllerInterface: nil,
-		service:                 NewCrudService(),
+		service: service,
 	}
 }
 
@@ -58,7 +51,7 @@ func (c CrudController) List(w http.ResponseWriter, r *http.Request) {
 
 func (c CrudController) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var product Product
+	var product model.Product
 	_ = json.NewDecoder(r.Body).Decode(&product)
 	result, err := c.service.Create(product)
 	if err != nil {
@@ -78,7 +71,7 @@ func (c CrudController) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(id)
 
-	var product Product
+	var product model.Product
 	_ = json.NewDecoder(r.Body).Decode(&product)
 	result, err := c.service.Update(product)
 

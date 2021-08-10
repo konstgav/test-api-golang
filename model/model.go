@@ -1,4 +1,8 @@
-package main
+package model
+
+import (
+	"test-api-golang/interfaces"
+)
 
 type Product struct {
 	ID    int    `json:"_id,omitempty" bson:"_id,omitempty"`
@@ -9,6 +13,6 @@ type Product struct {
 }
 
 type CrudEntity struct {
-	EntityInterface
+	interfaces.EntityInterface
 	*Product
 }
