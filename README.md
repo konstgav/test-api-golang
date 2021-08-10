@@ -63,3 +63,9 @@ git clone https://github.com/konstgav/test-api-golang.git
 cd test-api-golang
 docker-compose up 
 ```
+
+Генерация графа зависимостей пакетов
+
+```bash
+~/go/bin/godepgraph -novendor -s  -p github.com,go.mongodb.org,golang.org . | dot -Tpng -o godepgraph.png
+```
