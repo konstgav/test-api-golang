@@ -69,3 +69,5 @@ docker-compose up
 ```bash
 ~/go/bin/godepgraph -novendor -s  -p github.com,go.mongodb.org,golang.org . | dot -Tpng -o godepgraph.png
 ```
+
+![Зависимость пакетов приложения](godepgraph.png?raw=true "Dependencies graph")
