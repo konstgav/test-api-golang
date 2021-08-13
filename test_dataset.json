@@ -1,0 +1,8 @@
+[
+    {"_id": 1, "sku": "a1", "name": "tank", "type": "item", "price": 124},
+    {"_id": 2, "sku": "a2", "name": "coin", "type": "item", "price": 1},
+    {"_id": 3, "sku": "a3", "name": "rainbow", "type": "item", "price": 200},
+    {"_id": 4, "sku": "a4", "name": "t-shirt", "type": "merch", "price": 5},
+    {"_id": 5, "sku": "a5", "name": "lipstick", "type": "merch", "price": 6},
+    {"_id": 6, "sku": "a6", "name": "cup", "type": "merch", "price": 4}
+]

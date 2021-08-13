@@ -1,0 +1,13 @@
+version: '3'
+services:
+  graphql:
+    image: golang
+    volumes:
+      - .:/go/src
+    command: /bin/bash -c "cd src && go run *.go"
+    ports:
+    - 8080:8080
+    depends_on:
+    - mongo
+  mongo:
+    image: mongo

@@ -2,20 +2,26 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var DatabaseName = "product"
+var CollectionName = "productmodel"
+var MongoURI = "mongodb://mongo:27017"
+
 func ConnectDB() *mongo.Collection {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	clientOptions := options.Client().ApplyURI(MongoURI)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to MongoDB!")
-	collection := client.Database("product").Collection("productmodel")
+	log.Println("Connected to MongoDB!")
+	collection := client.Database(DatabaseName).Collection(CollectionName)
+	if collection == nil {
+		log.Fatal("Collection is nil")
+	}
 	return collection
 }
