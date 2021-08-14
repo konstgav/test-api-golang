@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"test-api-golang/repository"
 	"time"
 )
 
 var TestDatasetFilename = "test_dataset.json"
 
 func CleanAndFillRepository() error {
-	collection := ConnectDB()
+	collection := repository.ConnectDB()
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 	if err := collection.Drop(ctx); err != nil {
 		log.Println("error connection")

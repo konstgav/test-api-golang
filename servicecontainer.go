@@ -16,7 +16,7 @@ type ServiceContainerInterface interface {
 type kernel struct{}
 
 func (k *kernel) InjectCrudController() interfaces.CrudControllerInterface {
-	collection := ConnectDB()
+	collection := repository.ConnectDB()
 	crudRepository := repository.NewCrudRepository(collection)
 	crudService := service.NewCrudService(crudRepository)
 	crudController := controller.NewCrudController(crudService)

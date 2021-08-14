@@ -14,6 +14,8 @@ Xsolla Backend School 2021. Test API for e-commerce game developer's system.
 
 **Задача**: реализация системы управления товарами для площадки электронной коммерции (продажа таких товаров, как игры, мерч, виртуальная валюта и др.). Реализовать методы API для операций CRUD по управлению товарами. Товар определяется уникальным идентификатором и обязательно должен иметь [SKU](https://ru.wikipedia.org/wiki/SKU), имя, тип, стоимость.
 
+REST API сервер доступен по ссылке `http://localhost:8080/graphql`
+
 1. **Создание товара**. Метод генерирует и возвращает уникальный идентификатор товара.
 
 ```bash
@@ -69,3 +71,17 @@ docker-compose up
 ```
 
 ![Зависимость пакетов приложения](godepgraph.png?raw=true "Dependencies graph")
+
+## GraphQL
+
+Запускается graphql-сервер, который позвояет реализовать базовые CRUD операции. Среда для тестирования доступна по ссылке `http://localhost:5000/graphql`.
+
+1. `list: [Product]` - возвращает список товаров.
+
+2. `product(id: Int): Product` - возвращает товар по идентификатору.
+
+3. `create(id: Int!name: String!sku: String!type: String!price: Int!): Product` - создает новый товар.
+
+4. `delete(id: Int!): Product` - удаляет товар по идентификатору.
+
+5. `update(id: Int!name: String!sku: String!type: String!price: Int!): Product` - обновляет информацию о товаре.

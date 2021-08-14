@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"test-api-golang/interfaces"
 	"test-api-golang/model"
@@ -63,15 +62,14 @@ func (c CrudRepository) List(parameters interfaces.ListParametersInterface) (int
 }
 
 func (c CrudRepository) Create(item interfaces.EntityInterface) (interfaces.EntityInterface, error) {
-	result, err := c.collection.InsertOne(context.TODO(), item)
-	return result, err
+	_, err := c.collection.InsertOne(context.TODO(), item)
+	return item, err
 }
 
 func (c CrudRepository) Update(id int, item interfaces.EntityInterface) (interfaces.EntityInterface, error) {
 	data := item.(map[string]interface{})
 	var product model.Product
 	mapstructure.Decode(data, &product)
-	fmt.Println(product.Type, product)
 	filter := bson.M{"_id": id}
 	update := bson.D{
 		{"$set", bson.D{
@@ -82,7 +80,7 @@ func (c CrudRepository) Update(id int, item interfaces.EntityInterface) (interfa
 		}},
 	}
 	err := c.collection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&product)
-	return item, err
+	return product, err
 }
 
 func (c CrudRepository) Delete(id int) error {

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"test-api-golang/graphql"
 )
 
 func main() {
@@ -19,7 +20,7 @@ func main() {
 	}()
 
 	go func() {
-		http.Handle("/graphql", CreateGrapQLHandler())
+		http.Handle("/graphql", graphql.CreateGrapQLHandler())
 		log.Println(http.ListenAndServe(":5000", nil))
 		wg.Done()
 	}()
