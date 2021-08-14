@@ -53,6 +53,7 @@ func (c CrudController) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var product model.Product
 	_ = json.NewDecoder(r.Body).Decode(&product)
+	log.Println("here!")
 	result, err := c.service.Create(product)
 	if err != nil {
 		GetError(err, w)
@@ -104,7 +105,7 @@ type ErrorResponse struct {
 }
 
 func GetError(err error, w http.ResponseWriter) {
-	log.Fatal(err.Error())
+	log.Println(err.Error())
 	var response = ErrorResponse{
 		ErrorMessage: err.Error(),
 		StatusCode:   http.StatusInternalServerError,

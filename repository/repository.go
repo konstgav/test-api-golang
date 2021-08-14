@@ -49,12 +49,12 @@ func (c CrudRepository) List(parameters interfaces.ListParametersInterface) (int
 		var product model.Product
 		err := cur.Decode(&product)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		products = append(products, product)
 	}
 	if err := cur.Err(); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	return products, err
 }

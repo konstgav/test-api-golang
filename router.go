@@ -21,7 +21,7 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 func handleRequests(router *mux.Router, c interfaces.CrudControllerInterface) {
 	router.HandleFunc("/", homePage)
 	router.HandleFunc("/product", c.List).Methods("GET")
-	router.HandleFunc("/product", c.Delete).Methods("POST")
+	router.HandleFunc("/product", c.Create).Methods("POST")
 	router.HandleFunc("/product/{id}", c.Get).Methods("GET")
 	router.HandleFunc("/product/{id}", c.Delete).Methods("DELETE")
 	router.HandleFunc("/product/{id}", c.Update).Methods("PUT")
