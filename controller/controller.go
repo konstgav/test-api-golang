@@ -2,12 +2,10 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"test-api-golang/interfaces"
-	"test-api-golang/model"
 
 	"github.com/gorilla/mux"
 )
@@ -51,10 +49,9 @@ func (c CrudController) List(w http.ResponseWriter, r *http.Request) {
 
 func (c CrudController) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var product model.Product
-	_ = json.NewDecoder(r.Body).Decode(&product)
-	log.Println("here!")
-	result, err := c.service.Create(product)
+	var entity interfaces.EntityInterface
+	_ = json.NewDecoder(r.Body).Decode(&entity)
+	result, err := c.service.Create(entity)
 	if err != nil {
 		GetError(err, w)
 		return
@@ -70,11 +67,10 @@ func (c CrudController) Update(w http.ResponseWriter, r *http.Request) {
 		GetError(err, w)
 		return
 	}
-	fmt.Println(id)
 
-	var product model.Product
-	_ = json.NewDecoder(r.Body).Decode(&product)
-	result, err := c.service.Update(product)
+	var entity interfaces.EntityInterface
+	_ = json.NewDecoder(r.Body).Decode(&entity)
+	result, err := c.service.Update(id, entity)
 
 	if err != nil {
 		GetError(err, w)

@@ -27,8 +27,8 @@ func (c CrudService) Create(item interfaces.EntityInterface) (interfaces.EntityI
 	return c.repository.Create(item)
 }
 
-func (c CrudService) Update(item interfaces.EntityInterface) (interfaces.EntityInterface, error) {
-	return c.repository.Update(item)
+func (c CrudService) Update(id int, item interfaces.EntityInterface) (interfaces.EntityInterface, error) {
+	return c.repository.Update(id, item)
 }
 
 func (c CrudService) Delete(id int) error {

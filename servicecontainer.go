@@ -10,6 +10,7 @@ import (
 
 type ServiceContainerInterface interface {
 	InjectCrudController() interfaces.CrudControllerInterface
+	InjectGraphqlController() interfaces.GraphqlControllerInterface
 }
 
 type kernel struct{}
@@ -20,6 +21,11 @@ func (k *kernel) InjectCrudController() interfaces.CrudControllerInterface {
 	crudService := service.NewCrudService(crudRepository)
 	crudController := controller.NewCrudController(crudService)
 	return crudController
+}
+
+func (k *kernel) InjectGraphqlController() interfaces.GraphqlControllerInterface {
+	graphqlController := controller.NewGraphqlController()
+	return graphqlController
 }
 
 var (

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"test-api-golang/model"
 	"time"
 )
 
@@ -23,7 +22,7 @@ func CleanAndFillRepository() error {
 		return err
 	}
 	log.Println("byteValues:", string(byteValues))
-	var docs []model.Product
+	var docs []interface{}
 	err = json.Unmarshal(byteValues, &docs)
 	if err != nil {
 		return err

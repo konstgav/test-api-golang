@@ -2,9 +2,12 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"test-api-golang/interfaces"
 	"test-api-golang/model"
+
+	"github.com/mitchellh/mapstructure"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -64,12 +67,14 @@ func (c CrudRepository) Create(item interfaces.EntityInterface) (interfaces.Enti
 	return result, err
 }
 
-func (c CrudRepository) Update(item interfaces.EntityInterface) (interfaces.EntityInterface, error) {
-	var product = item.(model.Product)
-	filter := bson.M{"_id": product.ID}
+func (c CrudRepository) Update(id int, item interfaces.EntityInterface) (interfaces.EntityInterface, error) {
+	data := item.(map[string]interface{})
+	var product model.Product
+	mapstructure.Decode(data, &product)
+	fmt.Println(product.Type, product)
+	filter := bson.M{"_id": id}
 	update := bson.D{
 		{"$set", bson.D{
-			{"_id", product.ID},
 			{"name", product.Name},
 			{"sku", product.Sku},
 			{"type", product.Type},
