@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "test-api-golang/mailserver";
+
+package mailserver;
+
+service Mailer {
+    rpc SendPass(MsgRequest) returns (MsgReply) {}
+}
+
+message MsgRequest {
+    string email = 1;
+    string productName = 2;
+}
+
+message MsgReply {
+    bool isSent = 1;
+}
+

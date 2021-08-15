@@ -4,10 +4,9 @@ Xsolla Backend School 2021. Test API for e-commerce game developer's system.
 
 ## TODO
 
-- Рефакторинг: выделить контроллер, сервис, модель
-- Добавить сообщение об ошибке в response
-- Реализовать GraphQL
-- Реализовать gRPC
+- Рефакторинг: выделить сущности контроллер, сервис, модель для GraphQL и gRPC
+- Добавить обработку ошибок в response
+- Добавить авторизацию
 - Добавить тесты
 
 ## Краткое описание
@@ -67,14 +66,14 @@ docker-compose up
 Генерация графа зависимостей пакетов
 
 ```bash
-~/go/bin/godepgraph -novendor -s  -p github.com,go.mongodb.org,golang.org . | dot -Tpng -o godepgraph.png
+~/go/bin/godepgraph -novendor -s  -p github.com,go.mongodb.org,golang.org,google.golang.org . | dot -Tpng -o godepgraph.png
 ```
 
 ![Зависимость пакетов приложения](godepgraph.png?raw=true "Dependencies graph")
 
 ## GraphQL
 
-Запускается graphql-сервер, который позвояет реализовать базовые CRUD операции. Среда для тестирования доступна по ссылке `http://localhost:5000/graphql`.
+Запускается graphql-сервер, который позвояет реализовать базовые CRUD операции. Среда для тестирования GraphiQL доступна по ссылке `http://localhost:5000/graphql`.
 
 1. `list: [Product]` - возвращает список товаров.
 
@@ -85,3 +84,25 @@ docker-compose up
 4. `delete(id: Int!): Product` - удаляет товар по идентификатору.
 
 5. `update(id: Int!name: String!sku: String!type: String!price: Int!): Product` - обновляет информацию о товаре.
+
+Пример использования:
+
+```(bash)
+curl http://localhost:5000/graphql?query=%7Blist%7Bname%7D%7D
+```
+
+## gRPC
+
+Добавлен gRPC сервис, позволяющий отправить письмо при совершении пользователем покупки. В API добавлен endpoint `POST http://localhost:8080/sendmail`, сервер получает идентификатор товара (`_id`) и email пользователя (`email`) в теле запроса. API-сервер обращается в gRPC-сервис, чтобы отправить письмо.
+
+Для генерации кода клиента и сервера используется команда:
+
+```(bash)
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative mailserver/mailer.proto
+```
+
+Пример использования:
+
+```(bash)
+curl -X POST -H "Content-Type: application/json" -d '{"_id": 2,"email":"gavrilov.k@psu.ru"}' "http://localhost:8080/sendmail" 
+```

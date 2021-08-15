@@ -10,7 +10,7 @@ import (
 
 type ServiceContainerInterface interface {
 	InjectCrudController() interfaces.CrudControllerInterface
-	InjectGraphqlController() interfaces.GraphqlControllerInterface
+	InjectGrpcClientController() interfaces.GrpcClientControllerInterface
 }
 
 type kernel struct{}
@@ -23,9 +23,10 @@ func (k *kernel) InjectCrudController() interfaces.CrudControllerInterface {
 	return crudController
 }
 
-func (k *kernel) InjectGraphqlController() interfaces.GraphqlControllerInterface {
-	graphqlController := controller.NewGraphqlController()
-	return graphqlController
+func (k *kernel) InjectGrpcClientController() interfaces.GrpcClientControllerInterface {
+	collection := repository.ConnectDB()
+	grpcClientController := controller.NewGrpcClientController(collection)
+	return grpcClientController
 }
 
 var (

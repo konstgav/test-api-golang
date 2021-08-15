@@ -28,17 +28,14 @@ func handleRequests(router *mux.Router, c interfaces.CrudControllerInterface) {
 	router.HandleFunc("/product/{id}", c.Update).Methods("PUT")
 }
 
-/*
-func handleGraphqlRequests(router *mux.Router, c interfaces.GraphqlControllerInterface) {
-	router.HandleFunc("/graphql", c.Graphql).Methods("GET")
-}
-*/
 type router struct{}
 
 func (router *router) InitRouter() *mux.Router {
 	controller := ServiceContainer().InjectCrudController()
+	grpcClientController := ServiceContainer().InjectGrpcClientController()
 	r := mux.NewRouter().StrictSlash(true)
 	handleRequests(r, controller)
+	r.HandleFunc("/sendmail", grpcClientController.SendMail).Methods("POST")
 	log.Println("Rest API v2.0 - Mux Routers")
 	return r
 }

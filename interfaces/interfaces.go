@@ -32,6 +32,6 @@ type EntityInterface interface{}
 
 type ListParametersInterface interface{}
 
-type GraphqlControllerInterface interface {
-	Graphql(w http.ResponseWriter, r *http.Request)
+type GrpcClientControllerInterface interface {
+	SendMail(w http.ResponseWriter, r *http.Request)
 }
