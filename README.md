@@ -106,3 +106,11 @@ protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=p
 ```(bash)
 curl -X POST -H "Content-Type: application/json" -d '{"_id": 2,"email":"gavrilov.k@psu.ru"}' "http://localhost:8080/sendmail" 
 ```
+
+Для работы приложения необходимо создать файл `.env` в корневом каталоге, содержащий значения переменных окружения:
+
+```
+MAILER_REMOTE_HOST="smtp-server:port"
+MAILER_FROM="user@example.com"
+MAILER_PASSWORD="passwd"
+```
