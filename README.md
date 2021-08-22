@@ -117,7 +117,7 @@ MAILER_PASSWORD="passwd"
 
 ## OAuth 2.0 Xsolla Login
 
-Доступ для создания, удаления и редактирования товаров предоставляется только авторизированным клиентам. Авторизация производится при помощи сервиса [Xsolla Login](https://developers.xsolla.com/doc/login/features/connecting-oauth2/). Для тестирования необходимо выполнить следующие шаги:
+Доступ для создания, удаления и редактирования товаров предоставляется только авторизированным клиентам. Авторизация backend-клиентов производится при помощи API сервиса [Xsolla Login](https://developers.xsolla.com/doc/login/features/connecting-oauth2/). Для тестирования необходимо выполнить следующие шаги:
 
 1. Создать publisher-аккаунт на сервисе [Xsolla Login](https://xsolla.com/products/login).
 
@@ -140,3 +140,19 @@ MAILER_PASSWORD="passwd"
     8.2. Файл `xsolla-login-user-credentials.json` содержит `password` и `username` для пользователя.
 
     8.3. Файл `secret.pem` содержит секретный ключ для валидации JWT-токена.
+
+## OAuth 2.0 with Google account
+
+Доступ для просмотра одного товара или списка товаров предоставляется только авторизированным клиентам. Авторизация frontend-клиентов производится при помощи [Google API](https://console.cloud.google.com). Не удалось обменть google access token на JWT токен, не реализована валидатция токена. Для тестирования необходимо выполнить следующие шаги:
+
+1. Создать проект в `https://console.cloud.google.com`.
+
+2. Во вкладке `Credentials` проекта сгенерировать `OAuth 2.0 Client IDs`. В качестве `redirect_URL` указать `http://localhost:8080/oauth2callback`.
+
+3. Локально запусить веб-приложение командой `docker-compose up`.
+
+4. В браузере перейти по ссылке для авторизации с помощью google-аккаунта [`http://localhost:8080/authorize`](http://localhost:8080/authorize), потребуется ввести логин/пароль.
+
+5. В браузере перейти по ссылке [`http://localhost:8080/product`](http://localhost:8080/product) для просмотра списка товаров. При попытке напрямую без авторизации просмотреть товары, приложение вернет ошибку `401 Unauthorized`.
+
+6. В папке `oauth` необходимо хранить файл `google-account-credentials.json` с учетными данными `client_id`, `client_secret`, `redirect_URL`, `scopes`.
