@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"test-api-golang/interfaces"
+	"test-api-golang/oauth"
 
 	"github.com/gorilla/mux"
 )
@@ -22,10 +23,11 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 func handleRequests(router *mux.Router, c interfaces.CrudControllerInterface) {
 	router.HandleFunc("/", homePage)
 	router.HandleFunc("/product", c.List).Methods("GET")
-	router.HandleFunc("/product", c.Create).Methods("POST")
+	router.Handle("/product", oauth.IsAuthorized(c.Create)).Methods("POST")
 	router.HandleFunc("/product/{id}", c.Get).Methods("GET")
-	router.HandleFunc("/product/{id}", c.Delete).Methods("DELETE")
-	router.HandleFunc("/product/{id}", c.Update).Methods("PUT")
+	router.Handle("/product/{id}", oauth.IsAuthorized(c.Delete)).Methods("DELETE")
+	router.Handle("/product/{id}", oauth.IsAuthorized(c.Update)).Methods("PUT")
+	router.HandleFunc("/test-post", oauth.PostRequestToProductApp).Methods("GET")
 }
 
 type router struct{}

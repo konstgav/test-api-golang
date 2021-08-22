@@ -114,3 +114,29 @@ MAILER_REMOTE_HOST="smtp-server:port"
 MAILER_FROM="user@example.com"
 MAILER_PASSWORD="passwd"
 ```
+
+## OAuth 2.0 Xsolla Login
+
+Доступ для создания, удаления и редактирования товаров предоставляется только авторизированным клиентам. Авторизация производится при помощи сервиса [Xsolla Login](https://developers.xsolla.com/doc/login/features/connecting-oauth2/). Для тестирования необходимо выполнить следующие шаги:
+
+1. Создать publisher-аккаунт на сервисе [Xsolla Login](https://xsolla.com/products/login).
+
+2. Настроить проект в publisher-аккаунте в соотвествии с [описанием](https://developers.xsolla.com/doc/login/integration-guide/create-project/).
+
+3. Для получения учетных данных `projectId`, `client_id`, `client_secret`, `secret key` требуется создать [login-проект](https://developers.xsolla.com/doc/login/integration-guide/set-up-login-project/).
+
+4. Зарегистрировать нового пользователя при помощи POST запроса на [этой странице](https://developers.xsolla.com/login-api/auth/jwt/jwt-register-new-user/).
+
+5. На вкладке `Users` login-проекта должен отобразиться новый пользователь. Нужно создать группу пользователей `readers`, зайти в профиль нового пользователя и добавить его в группу `readers`. Это необходимо для предоставления доступа на создание, удаление и редактирование товаров.
+
+6. Локально запусить веб-приложение командой `docker-compose up`.
+
+7. В браузере перейти по ссылке для тестирования POST запроса `http://localhost:8080/test-post`, который добавляет новый товар в приложение. При попытке напрямую без авторизации добавить товар, приложение вернет ошибку `401 Unauthorized`. Вызывается функция, которая обращается к сервису Xsolla Login за JWT-токеном и отправляет запрос, содержащий в заголовке полученный токен.
+
+8. В папке `oauth` необходимо иметь следующие файлы с учетными данными:
+
+    8.1. Файл `xsolla-login-account-credentials.json` содержит `client_id` и `client_secret` для login-проект.
+
+    8.2. Файл `xsolla-login-user-credentials.json` содержит `password` и `username` для пользователя.
+
+    8.3. Файл `secret.pem` содержит секретный ключ для валидации JWT-токена.

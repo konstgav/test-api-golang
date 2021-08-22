@@ -1,6 +1,6 @@
 version: '3'
 services:
-  graphql:
+  golang-api:
     image: golang
     volumes:
       - .:/go/src
