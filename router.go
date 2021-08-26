@@ -7,6 +7,7 @@ import (
 	"sync"
 	"test-api-golang/interfaces"
 	"test-api-golang/oauth"
+	"test-api-golang/rabbitmq"
 
 	"github.com/gorilla/mux"
 )
@@ -42,8 +43,11 @@ func (router *router) InitRouter() *mux.Router {
 	if err != nil {
 		log.Println("Could not create Google Auth config")
 	}
+
 	r := mux.NewRouter().StrictSlash(true)
 	handleRequests(r, controller, googleAuth)
+	rbt := rabbitmq.CreateConnection()
+	r.HandleFunc("/rabbitmq", rbt.SendMessage).Methods("POST")
 	r.HandleFunc("/sendmail", grpcClientController.SendMail).Methods("POST")
 	log.Println("Rest API v2.0 - Mux Routers")
 	return r
