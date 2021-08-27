@@ -43,10 +43,9 @@ func (router *router) InitRouter() *mux.Router {
 	if err != nil {
 		log.Println("Could not create Google Auth config")
 	}
-
 	r := mux.NewRouter().StrictSlash(true)
 	handleRequests(r, controller, googleAuth)
-	rbt := rabbitmq.CreateConnection()
+	rbt := rabbitmq.NewConnection()
 	r.HandleFunc("/rabbitmq", rbt.SendMessage).Methods("POST")
 	r.HandleFunc("/sendmail", grpcClientController.SendMail).Methods("POST")
 	log.Println("Rest API v2.0 - Mux Routers")

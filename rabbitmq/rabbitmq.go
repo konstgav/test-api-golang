@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -10,9 +11,12 @@ import (
 )
 
 const (
-	messageTTL     = 90 // time to live for message in queue
-	resendTime     = 15 // time to return message in queue
-	MaxOutstanding = 5  // Limit the number of workers for checking URLs
+	messageTTL     = 90              // time to live for message in queue
+	resendTime     = 15              // time to return message in queue
+	MaxOutstanding = 5               // Limit the number of workers for checking URLs
+	reconnectDelay = 5 * time.Second // When reconnecting to the server after connection failure
+	reInitDelay    = 2 * time.Second // When setting up the channel after a channel exception
+	resendDelay    = 5 * time.Second // When resending messages the server didn't confirm
 )
 
 type URLCheck struct {
@@ -20,124 +24,248 @@ type URLCheck struct {
 }
 
 type RabbitMQConnection struct {
-	Channel *amqp.Channel
-	Queue   amqp.Queue
+	Connection      *amqp.Connection
+	Channel         *amqp.Channel
+	Queue           amqp.Queue
+	isReady         bool
+	done            chan bool
+	notifyConnClose chan *amqp.Error
+	notifyChanClose chan *amqp.Error
+	notifyConfirm   chan amqp.Confirmation
+	isReadyChan     chan bool
+	Name            string
 }
 
-func CreateConnection() *RabbitMQConnection {
-	ch, q, err := CreateQueue(messageTTL)
-	go recieve_msg(messageTTL, resendTime)
-	if err != nil {
-		log.Println(err.Error())
-		return nil
+func NewConnection() *RabbitMQConnection {
+	session := RabbitMQConnection{
+		Name: "task_queue",
+		done: make(chan bool),
 	}
-	return &RabbitMQConnection{Channel: ch, Queue: q}
-}
-
-func (rbt RabbitMQConnection) SendMessage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var entity URLCheck
-	json.NewDecoder(r.Body).Decode(&entity)
-	log.Println(entity.Link)
-	RabbitMQSendMessage(rbt.Channel, rbt.Queue, []byte(entity.Link))
-}
-
-func CreateQueue(messageTTL int) (*amqp.Channel, amqp.Queue, error) {
 	// TODO: move credentials & URL to environmental variables
-	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
-	if err != nil {
-		return nil, amqp.Queue{}, err
-	}
-	//defer conn.Close()
-
-	ch, err := conn.Channel()
-	if err != nil {
-		return nil, amqp.Queue{}, err
-	}
-	//defer ch.Close()
-	q, err := ch.QueueDeclare(
-		"task_queue", // name
-		true,         // durable
-		false,        // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		amqp.Table{"x-message-ttl": messageTTL * 1000}, // arguments
-	)
-	if err != nil {
-		return nil, amqp.Queue{}, err
-	}
-	return ch, q, err
+	addr := "amqp://guest:guest@rabbitmq:5672/"
+	go session.handleReconnect(addr)
+	return &session
 }
 
-func RabbitMQSendMessage(ch *amqp.Channel, q amqp.Queue, body []byte) error {
-	err := ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        body,
-		})
-	if err != nil {
-		return err
-	}
-	log.Printf("Sent %s", string(body))
-	return nil
-}
+// handleReconnect will wait for a connection error on
+// notifyConnClose, and then continuously attempt to reconnect.
+func (session *RabbitMQConnection) handleReconnect(addr string) {
+	for {
+		session.isReady = false
+		log.Println("Attempting to connect RabbitMQ server")
 
-func recieve_msg(messageTTL int, resendTime int) {
-	ch, q, err := CreateQueue(messageTTL)
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-	forever := make(chan bool)
-	for i := 0; i < MaxOutstanding; i++ {
-		go worker(ch, q, resendTime)
-	}
-	<-forever
-}
+		conn, err := session.connect(addr)
 
-func worker(ch *amqp.Channel, q amqp.Queue, resendTime int) {
-	msgs, err := ch.Consume(
-		q.Name, // queue
-		"",     // consumer
-		false,  // auto-ack
-		false,  // exclusive
-		false,  // no-local
-		false,  // no-wait
-		nil,    // args
-	)
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-	for d := range msgs {
-		log.Printf("Recieved  %v %s", d.DeliveryTag, d.Body)
-		t0 := time.Now()
-		success := CheckURL(string(d.Body))
-		t1 := time.Now()
-		checkURLDuration := t1.Sub(t0)
-		timeToWait := time.Duration(resendTime)*time.Second - checkURLDuration
-		if success {
-			log.Println("Correct link", d.DeliveryTag, string(d.Body))
-			d.Ack(false)
-		} else {
-			log.Println(timeToWait)
-			time.Sleep(timeToWait)
-			log.Println("Incorrect link", d.DeliveryTag, string(d.Body))
-			d.Nack(false, true)
+		if err != nil {
+			log.Println("Failed to connect RabbitMQ server. Retrying...")
+
+			select {
+			case <-session.done:
+				return
+			case <-time.After(reconnectDelay):
+			}
+			continue
+		}
+
+		if done := session.handleReInit(conn); done {
+			break
 		}
 	}
 }
 
-func CheckURL(url string) bool {
-	resp, err := http.Get(url)
+// connect will create a new AMQP connection
+func (session *RabbitMQConnection) connect(addr string) (*amqp.Connection, error) {
+	conn, err := amqp.Dial(addr)
+
 	if err != nil {
-		return false
+		return nil, err
 	}
-	status := resp.Status
-	log.Println(status)
-	return status[:2] == "20"
+
+	session.changeConnection(conn)
+	log.Println("Connected to RabbitMQ server!")
+	return conn, nil
+}
+
+// handleReconnect will wait for a channel error
+// and then continuously attempt to re-initialize both channels
+func (session *RabbitMQConnection) handleReInit(conn *amqp.Connection) bool {
+	for {
+		session.isReady = false
+
+		err := session.init(conn)
+
+		if err != nil {
+			log.Println("Failed to initialize RabbitMQ channel. Retrying...")
+
+			select {
+			case <-session.done:
+				return true
+			case <-time.After(reInitDelay):
+			}
+			continue
+		}
+
+		select {
+		case <-session.done:
+			return true
+		case <-session.notifyConnClose:
+			log.Println("RabbitMQ connection closed. Reconnecting...")
+			return false
+		case <-session.notifyChanClose:
+			log.Println("RabbitMQ channel closed. Re-running init...")
+		}
+	}
+}
+
+// init will initialize channel & declare queue
+func (session *RabbitMQConnection) init(conn *amqp.Connection) error {
+	ch, err := conn.Channel()
+
+	if err != nil {
+		return err
+	}
+
+	err = ch.Confirm(false)
+
+	if err != nil {
+		return err
+	}
+	_, err = ch.QueueDeclare(
+		session.Name,
+		false, // Durable
+		false, // Delete when unused
+		false, // Exclusive
+		false, // No-wait
+		amqp.Table{"x-message-ttl": messageTTL * 1000}, // Arguments
+	)
+
+	if err != nil {
+		return err
+	}
+
+	session.changeChannel(ch)
+	session.isReady = true
+	session.isReadyChan <- true
+	log.Println("RabbitMQ setup!")
+
+	return nil
+}
+
+// changeConnection takes a new connection to the queue,
+// and updates the close listener to reflect this.
+func (session *RabbitMQConnection) changeConnection(connection *amqp.Connection) {
+	session.Connection = connection
+	session.notifyConnClose = make(chan *amqp.Error)
+	session.Connection.NotifyClose(session.notifyConnClose)
+}
+
+// changeChannel takes a new channel to the queue,
+// and updates the channel listeners to reflect this.
+func (session *RabbitMQConnection) changeChannel(channel *amqp.Channel) {
+	session.Channel = channel
+	session.notifyChanClose = make(chan *amqp.Error)
+	session.notifyConfirm = make(chan amqp.Confirmation, 1)
+	session.Channel.NotifyClose(session.notifyChanClose)
+	session.Channel.NotifyPublish(session.notifyConfirm)
+}
+
+// Push will push data onto the queue, and wait for a confirm.
+// If no confirms are received until within the resendTimeout,
+// it continuously re-sends messages until a confirm is received.
+// This will block until the server sends a confirm. Errors are
+// only returned if the push action itself fails, see UnsafePush.
+func (session *RabbitMQConnection) Push(data []byte) error {
+	if !session.isReady {
+		return errors.New("failed to push: not connected")
+	}
+	for {
+		err := session.UnsafePush(data)
+		if err != nil {
+			log.Println("Push failed. Retrying...")
+			select {
+			case <-session.done:
+				return errors.New("rabbitmq session is shutting down")
+			case <-time.After(resendDelay):
+			}
+			continue
+		}
+		select {
+		case confirm := <-session.notifyConfirm:
+			if confirm.Ack {
+				log.Println("Push confirmed!")
+				return nil
+			}
+		case <-time.After(resendDelay):
+		}
+		log.Println("Push didn't confirm. Retrying...")
+	}
+}
+
+// UnsafePush will push to the queue without checking for
+// confirmation. It returns an error if it fails to connect.
+// No guarantees are provided for whether the server will
+// receive the message.
+func (session *RabbitMQConnection) UnsafePush(data []byte) error {
+	if !session.isReady {
+		return errors.New("not connected to a rabbitmq server")
+	}
+	return session.Channel.Publish(
+		"",           // Exchange
+		session.Name, // Routing key
+		false,        // Mandatory
+		false,        // Immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        data,
+		},
+	)
+}
+
+// Stream will continuously put queue items on the channel.
+// It is required to call delivery.Ack when it has been
+// successfully processed, or delivery.Nack when it fails.
+// Ignoring this will cause data to build up on the server.
+func (session *RabbitMQConnection) Stream() (<-chan amqp.Delivery, error) {
+	if !session.isReady {
+		return nil, errors.New("not connected to a rabbitmq server")
+	}
+	return session.Channel.Consume(
+		session.Name,
+		"",    // Consumer
+		false, // Auto-Ack
+		false, // Exclusive
+		false, // No-local
+		false, // No-Wait
+		nil,   // Args
+	)
+}
+
+// Close will cleanly shutdown the channel and connection.
+func (session *RabbitMQConnection) Close() error {
+	if !session.isReady {
+		return errors.New("already closed: not connected to the server")
+	}
+	err := session.Channel.Close()
+	if err != nil {
+		return err
+	}
+	err = session.Connection.Close()
+	if err != nil {
+		return err
+	}
+	close(session.done)
+	session.isReady = false
+	return nil
+}
+
+func (session *RabbitMQConnection) SendMessage(w http.ResponseWriter, r *http.Request) {
+	log.Println("Hit rabbit endpoint")
+	var entity URLCheck
+	json.NewDecoder(r.Body).Decode(&entity)
+	err := session.UnsafePush([]byte(entity.Link))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println("Sent ", entity.Link)
 }

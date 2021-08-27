@@ -7,6 +7,7 @@ import (
 	"sync"
 	"test-api-golang/graphql"
 	"test-api-golang/mailserver"
+	"test-api-golang/rabbitmq"
 
 	"github.com/joho/godotenv"
 )
@@ -24,7 +25,7 @@ func main() {
 		log.Println(err)
 	}
 	wg := new(sync.WaitGroup)
-	wg.Add(4)
+	wg.Add(5)
 
 	go func() {
 		log.Println(http.ListenAndServe(":8080", GorillaRouter().InitRouter()))
@@ -47,5 +48,9 @@ func main() {
 		wg.Done()
 	}()
 
+	go func() {
+		rabbitmq.RecieveMessages()
+		wg.Done()
+	}()
 	wg.Wait()
 }
