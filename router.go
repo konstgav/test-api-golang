@@ -32,6 +32,7 @@ func handleRequests(router *mux.Router, c interfaces.CrudControllerInterface, go
 	router.HandleFunc("/authorize", googleAuth.Authorize).Methods("GET")
 	router.HandleFunc("/oauth2callback", googleAuth.Oauth2callback).Methods("GET")
 	router.Handle("/check", googleAuth.AuthMiddleware(http.HandlerFunc(googleAuth.Check))).Methods("GET")
+	router.HandleFunc("/redis/{id}", c.Get).Methods("GET")
 }
 
 type router struct{}

@@ -3,6 +3,7 @@ module test-api-golang
 go 1.16
 
 require (
+	github.com/go-redis/redis/v8 v8.11.3
 	github.com/golang-jwt/jwt/v4 v4.0.0
 	github.com/gorilla/mux v1.8.0
 	github.com/graphql-go/graphql v0.7.9

@@ -35,3 +35,8 @@ type ListParametersInterface interface{}
 type GrpcClientControllerInterface interface {
 	SendMail(w http.ResponseWriter, r *http.Request)
 }
+
+type Cacher interface {
+	Get(key string) (interface{}, error)
+	Set(key string, value interface{}) error
+}

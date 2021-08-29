@@ -11,6 +11,7 @@ services:
     depends_on:
     - mongo
     - rabbitmq
+    - redis
   mongo:
     image: mongo
   rabbitmq:
@@ -18,3 +19,7 @@ services:
     ports:
       - 5672:5672   # for sender and consumer connections
       - 15672:15672 # for serve RabbitMQ GUI
+  redis:
+    image: redis
+    ports:
+      - 6379:6379

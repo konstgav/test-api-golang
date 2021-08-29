@@ -69,7 +69,7 @@ docker-compose up
 ~/go/bin/godepgraph -novendor -s  -p github.com,go.mongodb.org,golang.org,google.golang.org . | dot -Tpng -o godepgraph.png
 ```
 
-![Зависимость пакетов приложения](godepgraph.png?raw=true "Dependencies graph")
+![Зависимость пакетов приложения](godepgraph.png)
 
 ## GraphQL
 
@@ -176,4 +176,16 @@ curl -X POST http://localhost:8080/rabbitmq -d '{"link":"https://www.xsolla.com1
 
 ```(bash)
 docker run --rm -it -p 15672:15672 -p 5672:5672 rabbitmq:3-management
+```
+
+## NoSQL
+
+В тестовом задании используются такие нереляционные хранилища данных, как `MongoDB` и `Redis`, оба устанавливаются из docker-контейнеров. `MongoDB` выбрано поскольку позволяет легко сохранять и извлекать данные в формате `json` для HTTP-запросов, а также позволяет безболезненно менять схему данных, в отличии от SQL-решений. `Redis` выбран для кеширования данных, к которым часто обращаются клиенты с GET-запроcами, данные хранятся в оперативной памяти, а не читаются с диска, поэтому время ответа сокращается.
+
+Для тестирования `Redis` нужно запустить приложение командой `docker-compose up` и выполнить следующие GET-запросы. Если в redis-хранилище отсутсвует запись с идентификатором, передаваемом в GET-запросе, то приложение извлекает данные из `MongoDB` и сохраняет запись ключ-значение в `Redis`. Время хранения записи определяется константой `RedisRecordTimeToLiveSeconds` (5 секунд). Если запись с данным ключом уже есть в `Redis` - его и возвращаем клиенту, а к `MongoDB` не обращаемся. 
+
+```(bash)
+curl http://localhost:8080/redis/1
+curl http://localhost:8080/redis/1
+curl http://localhost:8080/redis/2
 ```

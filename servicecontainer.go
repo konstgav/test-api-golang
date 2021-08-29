@@ -4,8 +4,14 @@ import (
 	"sync"
 	"test-api-golang/controller"
 	"test-api-golang/interfaces"
+	"test-api-golang/redis"
 	"test-api-golang/repository"
 	"test-api-golang/service"
+	"time"
+)
+
+const (
+	RedisRecordTimeToLiveSeconds = 5
 )
 
 type ServiceContainerInterface interface {
@@ -19,7 +25,8 @@ func (k *kernel) InjectCrudController() interfaces.CrudControllerInterface {
 	collection := repository.ConnectDB()
 	crudRepository := repository.NewCrudRepository(collection)
 	crudService := service.NewCrudService(crudRepository)
-	crudController := controller.NewCrudController(crudService)
+	redisCache := redis.NewCache("redis:6379", "", 0, time.Duration(RedisRecordTimeToLiveSeconds)*time.Second)
+	crudController := controller.NewCrudController(crudService, redisCache)
 	return crudController
 }
 

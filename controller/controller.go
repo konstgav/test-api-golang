@@ -13,11 +13,13 @@ import (
 type CrudController struct {
 	interfaces.CrudControllerInterface
 	service interfaces.CrudServiceInterface
+	cache   interfaces.Cacher
 }
 
-func NewCrudController(service interfaces.CrudServiceInterface) *CrudController {
+func NewCrudController(service interfaces.CrudServiceInterface, cache interfaces.Cacher) *CrudController {
 	return &CrudController{
 		service: service,
+		cache:   cache,
 	}
 }
 
@@ -29,10 +31,14 @@ func (c CrudController) Get(w http.ResponseWriter, r *http.Request) {
 		GetError(err, w)
 		return
 	}
-	product, err := c.service.GetItem(id)
-	if err != nil {
-		GetError(err, w)
-		return
+	product, _ := c.cache.Get(strconv.Itoa(id))
+	if product == nil {
+		product, err = c.service.GetItem(id)
+		if err != nil {
+			GetError(err, w)
+			return
+		}
+		c.cache.Set(strconv.Itoa(id), product)
 	}
 	json.NewEncoder(w).Encode(product)
 }
