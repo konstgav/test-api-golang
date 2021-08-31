@@ -3,24 +3,13 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"sync"
 	"test-api-golang/graphql"
 	"test-api-golang/mailserver"
 	"test-api-golang/rabbitmq"
-
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Println("Error loading .env file")
-		os.Setenv("MAILER_REMOTE_HOST", "")
-		os.Setenv("MAILER_FROM", "")
-		os.Setenv("MAILER_PASSWORD", "")
-	}
-
 	if err := CleanAndFillRepository(); err != nil {
 		log.Println(err)
 	}

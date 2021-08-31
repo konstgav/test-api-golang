@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -41,9 +42,11 @@ func NewConnection() *RabbitMQConnection {
 		Name: "task_queue",
 		done: make(chan bool),
 	}
-	// TODO: move credentials & URL to environmental variables
-	addr := "amqp://guest:guest@rabbitmq:5672/"
-	go session.handleReconnect(addr)
+	rabbitmq_URI := os.Getenv("RABBITMQ_URI")
+	if rabbitmq_URI == "" {
+		panic("Environmental variable RABBITMQ_URI do not set")
+	}
+	go session.handleReconnect(rabbitmq_URI)
 	return &session
 }
 

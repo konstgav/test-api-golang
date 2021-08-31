@@ -2,8 +2,15 @@ version: '3'
 services:
   golang-api:
     image: golang
+    environment:
+    - MAILER_REMOTE_HOST=${MAILER_REMOTE_HOST}
+    - MAILER_FROM=${MAILER_FROM}
+    - MAILER_PASSWORD=${MAILER_PASSWORD}
+    - MONGO_URI=${MONGO_URI}
+    - RABBITMQ_URI=${RABBITMQ_URI}
+    - REDIS_URI=${REDIS_URI}
     volumes:
-      - .:/go/src
+    - .:/go/src
     command: /bin/bash -c "cd src && go run *.go"
     ports:
     - 8080:8080
@@ -17,9 +24,9 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - 5672:5672   # for sender and consumer connections
-      - 15672:15672 # for serve RabbitMQ GUI
+    - 5672:5672   # for sender and consumer connections
+    - 15672:15672 # for serve RabbitMQ GUI
   redis:
     image: redis
     ports:
-      - 6379:6379
+    - 6379:6379

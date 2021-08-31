@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"sync"
 	"test-api-golang/controller"
 	"test-api-golang/interfaces"
@@ -25,7 +26,11 @@ func (k *kernel) InjectCrudController() interfaces.CrudControllerInterface {
 	collection := repository.ConnectDB()
 	crudRepository := repository.NewCrudRepository(collection)
 	crudService := service.NewCrudService(crudRepository)
-	redisCache := redis.NewCache("redis:6379", "", 0, time.Duration(RedisRecordTimeToLiveSeconds)*time.Second)
+	redis_URI := os.Getenv("REDIS_URI")
+	if redis_URI == "" {
+		panic("Environmental variable REDIS_URI do not set")
+	}
+	redisCache := redis.NewCache(redis_URI, "", 0, time.Duration(RedisRecordTimeToLiveSeconds)*time.Second)
 	crudController := controller.NewCrudController(crudService, redisCache)
 	return crudController
 }

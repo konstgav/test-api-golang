@@ -130,6 +130,9 @@ var cnf conf
 var queue chan mess
 
 func Init() {
+	if os.Getenv("MAILER_REMOTE_HOST") == "" || os.Getenv("MAILER_FROM") == "" || os.Getenv("MAILER_PASSWORD") == "" {
+		panic("Environmental variable do not set")
+	}
 	cnf = conf{
 		os.Getenv("MAILER_REMOTE_HOST"),
 		os.Getenv("MAILER_FROM"),

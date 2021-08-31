@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -12,9 +13,11 @@ func RecieveMessages() {
 		isReadyChan: make(chan bool),
 		done:        make(chan bool),
 	}
-	// TODO: move credentials & URL to environmental variables
-	addr := "amqp://guest:guest@rabbitmq:5672/"
-	go session.handleReconnect(addr)
+	rabbitmq_URI := os.Getenv("RABBITMQ_URI")
+	if rabbitmq_URI == "" {
+		panic("Environmental variable RABBITMQ_URI do not set")
+	}
+	go session.handleReconnect(rabbitmq_URI)
 	<-session.isReadyChan
 	for i := 0; i < MaxOutstanding; i++ {
 		go session.worker()
