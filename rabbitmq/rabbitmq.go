@@ -14,7 +14,7 @@ import (
 const (
 	messageTTL     = 90              // time to live for message in queue
 	resendTime     = 15              // time to return message in queue
-	MaxOutstanding = 5               // Limit the number of workers for checking URLs
+	MaxOutstanding = 1               // Limit the number of workers for checking URLs
 	reconnectDelay = 5 * time.Second // When reconnecting to the server after connection failure
 	reInitDelay    = 2 * time.Second // When setting up the channel after a channel exception
 	resendDelay    = 5 * time.Second // When resending messages the server didn't confirm
@@ -123,25 +123,67 @@ func (session *RabbitMQConnection) handleReInit(conn *amqp.Connection) bool {
 // init will initialize channel & declare queue
 func (session *RabbitMQConnection) init(conn *amqp.Connection) error {
 	ch, err := conn.Channel()
-
 	if err != nil {
 		return err
 	}
 
 	err = ch.Confirm(false)
-
 	if err != nil {
 		return err
 	}
+
+	err = ch.ExchangeDeclare("main-exchange", "fanout", false, false, false, false, nil)
+	if err != nil {
+		return err
+	}
+
+	err = ch.ExchangeDeclare("delayed-exchange", "fanout", false, false, false, false, nil)
+	if err != nil {
+		return err
+	}
+
 	_, err = ch.QueueDeclare(
-		session.Name,
+		"main-queue",
+		false,
+		false,
+		false,
+		false,
+		amqp.Table{"x-dead-letter-exchange": "delayed-exchange"},
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = ch.QueueDeclare(
+		"delayed-queue",
 		false, // Durable
 		false, // Delete when unused
 		false, // Exclusive
 		false, // No-wait
-		amqp.Table{"x-message-ttl": messageTTL * 1000}, // Arguments
+		amqp.Table{"x-dead-letter-exchange": "main-exchange", "x-message-ttl": resendTime * 1000}, // Arguments
 	)
+	if err != nil {
+		return err
+	}
 
+	err = ch.QueueBind(
+		"delayed-queue",
+		"",
+		"delayed-exchange",
+		false,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = ch.QueueBind(
+		"main-queue",
+		"",
+		"main-exchange",
+		false,
+		nil,
+	)
 	if err != nil {
 		return err
 	}
@@ -213,13 +255,14 @@ func (session *RabbitMQConnection) UnsafePush(data []byte) error {
 		return errors.New("not connected to a rabbitmq server")
 	}
 	return session.Channel.Publish(
-		"",           // Exchange
-		session.Name, // Routing key
-		false,        // Mandatory
-		false,        // Immediate
+		"main-exchange", // Exchange
+		"",              // Routing key
+		false,           // Mandatory
+		false,           // Immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        data,
+			Timestamp:   time.Now(),
 		},
 	)
 }
@@ -233,7 +276,7 @@ func (session *RabbitMQConnection) Stream() (<-chan amqp.Delivery, error) {
 		return nil, errors.New("not connected to a rabbitmq server")
 	}
 	return session.Channel.Consume(
-		session.Name,
+		"main-queue",
 		"",    // Consumer
 		false, // Auto-Ack
 		false, // Exclusive

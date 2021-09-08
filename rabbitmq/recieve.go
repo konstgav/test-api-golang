@@ -19,9 +19,7 @@ func RecieveMessages() {
 	}
 	go session.handleReconnect(rabbitmq_URI)
 	<-session.isReadyChan
-	for i := 0; i < MaxOutstanding; i++ {
-		go session.worker()
-	}
+	session.worker()
 }
 
 func (session *RabbitMQConnection) worker() {
@@ -32,19 +30,17 @@ func (session *RabbitMQConnection) worker() {
 	}
 	for d := range msgs {
 		log.Printf("Recieved  %v %s", d.DeliveryTag, d.Body)
-		t0 := time.Now()
 		success := CheckURL(string(d.Body))
-		t1 := time.Now()
-		checkURLDuration := t1.Sub(t0)
-		timeToWait := time.Duration(resendTime)*time.Second - checkURLDuration
 		if success {
 			log.Println("Correct link", d.DeliveryTag, string(d.Body))
 			d.Ack(false)
 		} else {
-			//log.Println(timeToWait)
-			time.Sleep(timeToWait)
 			log.Println("Incorrect link", d.DeliveryTag, string(d.Body))
-			d.Nack(false, true)
+			if time.Since(d.Timestamp) > time.Duration(messageTTL)*time.Second {
+				d.Ack(false)
+			} else {
+				d.Nack(false, false)
+			}
 		}
 	}
 }
