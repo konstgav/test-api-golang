@@ -307,8 +307,12 @@ func (session *RabbitMQConnection) Close() error {
 func (session *RabbitMQConnection) SendMessage(w http.ResponseWriter, r *http.Request) {
 	log.Println("Hit rabbit endpoint")
 	var entity URLCheck
-	json.NewDecoder(r.Body).Decode(&entity)
-	err := session.UnsafePush([]byte(entity.Link))
+	err := json.NewDecoder(r.Body).Decode(&entity)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = session.UnsafePush([]byte(entity.Link))
 	if err != nil {
 		log.Println(err)
 		return

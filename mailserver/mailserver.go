@@ -72,7 +72,13 @@ func MessageLoop() {
 		return
 	}
 	var err error
-	defer client.Quit()
+	defer func() {
+		err := client.Quit()
+		if err != nil {
+			log.Println(err.Error())
+		}
+	}()
+
 	for m := range queue {
 		err = client.Noop()
 		if err != nil {

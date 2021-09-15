@@ -33,13 +33,25 @@ func (session *RabbitMQConnection) worker() {
 		success := CheckURL(string(d.Body))
 		if success {
 			log.Println("Correct link", d.DeliveryTag, string(d.Body))
-			d.Ack(false)
+			err = d.Ack(false)
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
 		} else {
 			log.Println("Incorrect link", d.DeliveryTag, string(d.Body))
 			if time.Since(d.Timestamp) > time.Duration(messageTTL)*time.Second {
-				d.Ack(false)
+				err = d.Ack(false)
+				if err != nil {
+					log.Println(err.Error())
+					return
+				}
 			} else {
-				d.Nack(false, false)
+				err = d.Nack(false, false)
+				if err != nil {
+					log.Println(err.Error())
+					return
+				}
 			}
 		}
 	}

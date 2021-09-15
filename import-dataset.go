@@ -34,6 +34,9 @@ func CleanAndFillRepository() error {
 			return (err)
 		}
 	}
-	collection.Database().Client().Disconnect(ctx)
+	err = collection.Database().Client().Disconnect(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }

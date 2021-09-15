@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -105,20 +104,6 @@ func (a GoogleAuth) Oauth2callback(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &c)
 	w.WriteHeader(200)
-}
-
-func (a GoogleAuth) saveToken(token oauth2.Token) {
-	e, err := json.Marshal(token)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(string(e))
-	err = ioutil.WriteFile("token", e, 0644)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 }
 
 func (a GoogleAuth) Authorize(w http.ResponseWriter, r *http.Request) {

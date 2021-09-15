@@ -38,9 +38,15 @@ func (c CrudController) Get(w http.ResponseWriter, r *http.Request) {
 			GetError(err, w)
 			return
 		}
-		c.cache.Set(strconv.Itoa(id), product)
+		err = c.cache.Set(strconv.Itoa(id), product)
+		if err != nil {
+			log.Println(err.Error())
+		}
 	}
-	json.NewEncoder(w).Encode(product)
+	err = json.NewEncoder(w).Encode(product)
+	if err != nil {
+		GetError(err, w)
+	}
 }
 
 func (c CrudController) List(w http.ResponseWriter, r *http.Request) {
@@ -50,19 +56,29 @@ func (c CrudController) List(w http.ResponseWriter, r *http.Request) {
 		GetError(err, w)
 		return
 	}
-	json.NewEncoder(w).Encode(products)
+	err = json.NewEncoder(w).Encode(products)
+	if err != nil {
+		GetError(err, w)
+	}
 }
 
 func (c CrudController) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var entity interfaces.EntityInterface
-	_ = json.NewDecoder(r.Body).Decode(&entity)
+	err := json.NewDecoder(r.Body).Decode(&entity)
+	if err != nil {
+		GetError(err, w)
+		return
+	}
 	result, err := c.service.Create(entity)
 	if err != nil {
 		GetError(err, w)
 		return
 	}
-	json.NewEncoder(w).Encode(result)
+	err = json.NewEncoder(w).Encode(result)
+	if err != nil {
+		GetError(err, w)
+	}
 }
 
 func (c CrudController) Update(w http.ResponseWriter, r *http.Request) {
@@ -75,14 +91,21 @@ func (c CrudController) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var entity interfaces.EntityInterface
-	_ = json.NewDecoder(r.Body).Decode(&entity)
-	result, err := c.service.Update(id, entity)
-
+	err = json.NewDecoder(r.Body).Decode(&entity)
 	if err != nil {
 		GetError(err, w)
 		return
 	}
-	json.NewEncoder(w).Encode(result)
+
+	result, err := c.service.Update(id, entity)
+	if err != nil {
+		GetError(err, w)
+		return
+	}
+	err = json.NewEncoder(w).Encode(result)
+	if err != nil {
+		GetError(err, w)
+	}
 }
 
 func (c CrudController) Delete(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +121,10 @@ func (c CrudController) Delete(w http.ResponseWriter, r *http.Request) {
 		GetError(err, w)
 		return
 	}
-	json.NewEncoder(w).Encode("204 No Data")
+	err = json.NewEncoder(w).Encode("204 No Data")
+	if err != nil {
+		GetError(err, w)
+	}
 }
 
 type ErrorResponse struct {
@@ -116,5 +142,8 @@ func GetError(err error, w http.ResponseWriter) {
 	message, _ := json.Marshal(response)
 
 	w.WriteHeader(response.StatusCode)
-	w.Write(message)
+	_, err = w.Write(message)
+	if err != nil {
+		log.Println(err.Error())
+	}
 }

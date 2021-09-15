@@ -49,7 +49,10 @@ func PostRequestToProductAppWithToken(w http.ResponseWriter, token *TokenInfo) e
 	log.Println(string(body))
 	w.Header().Set("Content-Type", res.Header.Get("Content-Type"))
 	w.Header().Set("Content-Length", res.Header.Get("Content-Length"))
-	w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -69,7 +69,10 @@ func (c CrudRepository) Create(item interfaces.EntityInterface) (interfaces.Enti
 func (c CrudRepository) Update(id int, item interfaces.EntityInterface) (interfaces.EntityInterface, error) {
 	data := item.(map[string]interface{})
 	var product model.Product
-	mapstructure.Decode(data, &product)
+	err := mapstructure.Decode(data, &product)
+	if err != nil {
+		return nil, err
+	}
 	filter := bson.M{"_id": id}
 	update := bson.D{
 		{"$set", bson.D{
@@ -79,7 +82,7 @@ func (c CrudRepository) Update(id int, item interfaces.EntityInterface) (interfa
 			{"price", product.Price},
 		}},
 	}
-	err := c.collection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&product)
+	err = c.collection.FindOneAndUpdate(context.TODO(), filter, update).Decode(&product)
 	return product, err
 }
 
