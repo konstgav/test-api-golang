@@ -16,13 +16,13 @@ type GorillaRouterInterface interface {
 	InitRouter() *mux.Router
 }
 
-func homePage(w http.ResponseWriter, r *http.Request) {
+func HomePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to the test CRUD API!")
 	fmt.Println("Endpoint Hit: homePage")
 }
 
 func handleRequests(router *mux.Router, c interfaces.CrudControllerInterface, googleAuth *oauth.GoogleAuth) {
-	router.HandleFunc("/", homePage)
+	router.HandleFunc("/", HomePage)
 	router.Handle("/product", googleAuth.AuthMiddleware(c.List)).Methods("GET")
 	router.Handle("/product", oauth.IsAuthorized(c.Create)).Methods("POST")
 	router.Handle("/product/{id}", googleAuth.AuthMiddleware(c.Get)).Methods("GET")
