@@ -13,7 +13,8 @@ var TestDatasetFilename = "test_dataset.json"
 
 func CleanAndFillRepository() error {
 	collection := repository.ConnectDB()
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	if err := collection.Drop(ctx); err != nil {
 		log.Println("error connection")
 		return err
