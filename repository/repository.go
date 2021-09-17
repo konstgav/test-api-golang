@@ -35,7 +35,7 @@ func NewCrudRepository(collection *mongo.Collection) *CrudRepository {
 
 func (c CrudRepository) Find(id int) (interfaces.EntityInterface, error) {
 	var product model.Product
-	filter := bson.M{"_id": id}
+	filter := bson.M{"_id": id} //nolint
 	err := c.collection.FindOne(context.TODO(), filter).Decode(&product)
 	return product, err
 }
@@ -73,7 +73,8 @@ func (c CrudRepository) Update(id int, item interfaces.EntityInterface) (interfa
 	if err != nil {
 		return nil, err
 	}
-	filter := bson.M{"_id": id}
+	filter := bson.M{"_id": id} //nolint
+	//nolint
 	update := bson.D{
 		{"$set", bson.D{
 			{"name", product.Name},
@@ -87,7 +88,7 @@ func (c CrudRepository) Update(id int, item interfaces.EntityInterface) (interfa
 }
 
 func (c CrudRepository) Delete(id int) error {
-	filter := bson.M{"_id": id}
+	filter := bson.M{"_id": id} //nolint
 	_, err := c.collection.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
